@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from database import get_session
 from pydanticModels import *
@@ -15,6 +16,18 @@ WEB_CLIENT_ID = os.getenv("Client_ID")
 SECRET = os.getenv("Client_secret")
 
 app = FastAPI()
+
+origins = [
+    "http:// localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/add-college-domain", status_code=status.HTTP_201_CREATED)
 def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
