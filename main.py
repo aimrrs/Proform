@@ -79,8 +79,6 @@ def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
 def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     update_dict = items.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
-        if key != "year":
-            setattr(current_user, key, str(value))
         setattr(current_user, key, value)
     
     try:
