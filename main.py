@@ -41,7 +41,7 @@ def createJWT (user_id: int, email: EmailStr):
         "email": email,
         "expire": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
     }
-    proform_jwt_token = jwt.encode(payload, SECRET, algorithms=["HS256"])
+    proform_jwt_token = jwt.encode(payload, SECRET, algorithm="HS256")
     return proform_jwt_token
 
 # Working.
