@@ -5,7 +5,7 @@ class SignUpItems (BaseModel):
     email: EmailStr
     course: str
     department: str
-    year: str
+    year: int
     linkedin_link: HttpUrl | None = None
     github_link: HttpUrl | None = None
 
