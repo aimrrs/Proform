@@ -70,8 +70,8 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
 
 # Endpoints.
 
-# Working.
-@app.get("/profile", status_code=status.HTTP_200_OK, tags=["User"])
+# Complete.
+@app.get("/profile", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
     return current_user
 
@@ -103,7 +103,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends
     }
 
 # Complete.
-@app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication"])
+@app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
 def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     is_user_exist_statement = select(Users.email).where(Users.email == items.email)
     is_user_exists = session.exec(is_user_exist_statement).first()
@@ -117,7 +117,8 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     user = Users(name=items.name, 
                 email=items.email, 
                 course=items.course, 
-                department=items.department, 
+                department=items.department,
+                year=items.department,
                 linkedin_link=str(items.linkedin_link), 
                 github_link=str(items.github_link))
 
@@ -134,7 +135,7 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     }
 
 # Complete.
-@app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication"])
+@app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication - APIs"])
 def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
     token = data["token"]
     try:
@@ -175,5 +176,44 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
             "user_name": id_info["given_name"],
             "user_email": id_info["email"],
         }
+
+# Working.
+@app.get("/get-courses-departments", status_code=status.HTTP_200_OK, tags=["Process - APIs"])
+def getCourseDepartment (session: Annotated[Session, Depends(get_session)]):
+    data = session.exec(select(AvailableCourseAndDepartments)).all()
+    return data
+
+# Working.
+@app.post("/add-course-department", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
+def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Session, Depends(get_session)], current_user: Annotated[Users, Depends(getCurrentUser)]):
+    is_admin = session.exec(select(Admin).where(Admin.id == current_user.id)).first()
+    if not is_admin:
+        raise HTTPException (
+            status_code=401,
+            details="Unauthorized User."
+        )
+    
+    is_course_department_exists_statement = select(AvailableCourseAndDepartments).where(AvailableCourseAndDepartments.course == items.course).where(AvailableCourseAndDepartments.departments == items.department)
+    is_course_department_exists = session.exec(is_course_department_exists_statement).first()
+    if is_course_department_exists:
+        raise HTTPException (
+            status_code=400,
+            detail="Course And Department Already Exists."
+        )
+    
+    iC = items.course.lower().strip()
+    iD = items.department.lower().strip()
+    available_course_and_departments = AvailableCourseAndDepartments(course=iC, departments=iD)
+   
+    try:
+        session.add(available_course_and_departments)
+        session.commit()
+        session.refresh(available_course_and_departments)
+    except Exception:
+        raise HTTPException (
+            status_code=500,
+            details="Couldn't Add Course and Department."
+        )
+    return available_course_and_departments
 
 # aimrrs

@@ -12,6 +12,10 @@ class SignUpItems (BaseModel):
 class AddCollegeDomainsItems (BaseModel):
     domain: str
 
+class AddCourseDepartmentItems (BaseModel):
+    course: str
+    department: str
+
 #class GoogleToken (BaseModel):
 #    token: str
 
