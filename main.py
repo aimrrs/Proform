@@ -101,9 +101,9 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
 
 # Complete.
 @app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication"])
-def getGoogleTokenId (data: GoogleToken, session: Session = Depends(get_session)):
+def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
     print(data)
-    token = data#["token"]
+    token = data["token"]
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request(), WEB_CLIENT_ID)
     except Exception:

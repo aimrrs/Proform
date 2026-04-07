@@ -12,7 +12,7 @@ class SignUpItems (BaseModel):
 class AddCollegeDomainsItems (BaseModel):
     domain: str
 
-class GoogleToken (BaseModel):
-    token: str
+#class GoogleToken (BaseModel):
+#    token: str
 
 # aimrrs
