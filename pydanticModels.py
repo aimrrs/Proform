@@ -17,7 +17,6 @@ class AddCourseDepartmentItems (BaseModel):
     department: str
 
 class UpdateProfileItems (BaseModel):
-    id: int
     year: int | None = None
     linkled_link: str | None = None
     github_link: str | None = None
