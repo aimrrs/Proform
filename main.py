@@ -44,7 +44,7 @@ def createJWT (user_id: int, email: EmailStr):
     proform_jwt_token = jwt.encode(payload, SECRET, algorithm="HS256")
     return proform_jwt_token
 
-# Working.
+# Complete.
 def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Annotated[Session, Depends(get_session)]):
     try:
         token_data = jwt.decode(token, SECRET, algorithms=["HS256"])
@@ -74,7 +74,7 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
 def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
     return current_user
 
-# Working.
+# Complete.
 @app.patch("/update-profile", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     update_dict = items.model_dump(exclude_unset=True)
@@ -94,6 +94,18 @@ def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Dep
         )
     return current_user
  
+# Working.
+@app.get("/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
+def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
+    is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
+    if not is_username_exists:
+        raise HTTPException (
+            status_code=401,
+            detail="Invalid Username."
+        )
+    user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
+    return user
+
 # Complete.
 @app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
 def signUp (items: SignUpItems, session: Session = Depends(get_session)):

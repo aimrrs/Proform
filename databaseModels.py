@@ -20,4 +20,9 @@ class AvailableCourseAndDepartments (SQLModel, table=True):
 class Admin (SQLModel, table=True):
     id: int = Field(primary_key=True, foreign_key="users.id", ondelete="CASCADE")
 
+class PublicUserName (SQLModel, table=True):
+    id: int = Field(primary_key=True, foreign_key="users.id", ondelete="CASCADE")
+    username: str = Field(index=True, unique=True)
+    email: str = Field(index=True, unique=True)
+
 # aimrrs
