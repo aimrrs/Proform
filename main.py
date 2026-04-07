@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 from database import get_session
 from pydanticModels import *
@@ -10,12 +11,15 @@ from dotenv import load_dotenv
 import os
 import jwt
 import datetime
+from typing import Annotated
 
 load_dotenv()
 WEB_CLIENT_ID = os.getenv("Client_ID")
 SECRET = os.getenv("Client_secret")
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
 
 origins = [
     "http://localhost:3000",
@@ -30,18 +34,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Progress.
+# Complete.
 def createJWT (user_id: int, email: EmailStr):
     payload = {
         "user_id": user_id,
         "email": email,
-        #"exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
+        "expire": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
     }
-    proform_jwt_token = jwt.encode(payload, SECRET, algorithm="HS256")
+    proform_jwt_token = jwt.encode(payload, SECRET, algorithms=["HS256"])
     return proform_jwt_token
+
+# Working.
+def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Annotated[Session, Depends(get_session)]):
+    try:
+        token_data = jwt.decode(token, SECRET, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token Expired."
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException (
+            status_code=401,
+            detail="Invalid Token."
+        )
+    user = session.exec(select(Users).where(Users.id == token_data.get("user_id"))).first()
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="User Not Found Or Unauthorized User."
+        )
+    return user
+
+
 
 # Endpoints.
 
+# Working.
+@app.post("/profile", status_code=status.HTTP_200_OK, tags=["User"])
+def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
+    return current_user
+
+# Progress.
 @app.post("/add-college-domain", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
 def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
     domain = items.domain.lower().strip()
