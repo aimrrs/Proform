@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from database import get_session
@@ -19,12 +19,12 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://mind-mess-26673378.figma.site/",
+    "https://mind-mess-26673378.figma.site",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["*"],
+    allow_origins = origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -101,8 +101,10 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
 
 # Complete.
 @app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication"])
-def getGoogleTokenId (data: GoogleToken, session: Session = Depends(get_session)):
-    token = data["token"]
+def getGoogleTokenId (req: Request, session: Session = Depends(get_session)):
+    body = req.json()
+    print("RAW BODY:", body)
+    token = body["token"]
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request(), WEB_CLIENT_ID)
     except Exception:
