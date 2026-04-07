@@ -13,6 +13,6 @@ class AddCollegeDomainsItems (BaseModel):
     domain: str
 
 class GoogleToken (BaseModel):
-    token: str
+    token: dict
 
 # aimrrs
