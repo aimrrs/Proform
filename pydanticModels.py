@@ -18,7 +18,7 @@ class AddCourseDepartmentItems (BaseModel):
 
 class UpdateProfileItems (BaseModel):
     year: int | None = None
-    linked_link: str | None = None
+    linkedin_link: str | None = None
     github_link: str | None = None
 
 #class GoogleToken (BaseModel):
