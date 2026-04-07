@@ -67,7 +67,6 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
     return user
 
 
-
 # Endpoints.
 
 # Complete.
@@ -75,33 +74,26 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
 def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
     return current_user
 
-# Progress.
-@app.post("/add-college-domain", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
-def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
-    domain = items.domain.lower().strip()
-    domain_exists = session.exec(select(AvailableColleges).where(AvailableColleges.domains == domain)).first()
-    if domain_exists:
-        raise HTTPException (
-            status_code=400,
-            detail="College Domain Already Exisits."
-        )
-
-    available_colleges = AvailableColleges(domains=domain)
+# Working.
+@app.patch("/update-profile", status_code=status.HTTP_200_OK, tags=["User - APIs"])
+def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    update_dict = items.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        setattr(current_user, key, value)
+    
     try:
-        session.add(available_colleges)
+        session.add(current_user)
         session.commit()
-        session.refresh(available_colleges)
+        session.refresh(current_user)
+    
     except Exception:
+        session.rollback()
         raise HTTPException (
             status_code=500,
-            detail="Couldn't Add College Domain."
+            detail="Couldn't Update Profile."
         )
-
-    return {
-        "message": "College Domain Added.",
-        "new_domain": domain,
-    }
-
+    return current_user
+ 
 # Complete.
 @app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
 def signUp (items: SignUpItems, session: Session = Depends(get_session)):
@@ -215,5 +207,32 @@ def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Ses
             details="Couldn't Add Course and Department."
         )
     return available_course_and_departments
+
+# Progress.
+@app.post("/add-college-domain", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
+def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
+    domain = items.domain.lower().strip()
+    domain_exists = session.exec(select(AvailableColleges).where(AvailableColleges.domains == domain)).first()
+    if domain_exists:
+        raise HTTPException (
+            status_code=400,
+            detail="College Domain Already Exisits."
+        )
+
+    available_colleges = AvailableColleges(domains=domain)
+    try:
+        session.add(available_colleges)
+        session.commit()
+        session.refresh(available_colleges)
+    except Exception:
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Add College Domain."
+        )
+
+    return {
+        "message": "College Domain Added.",
+        "new_domain": domain,
+    }
 
 # aimrrs

@@ -16,6 +16,12 @@ class AddCourseDepartmentItems (BaseModel):
     course: str
     department: str
 
+class UpdateProfileItems (BaseModel):
+    id: int
+    year: int | None = None
+    linkled_link: HttpUrl | None = None
+    github_link: HttpUrl | None = None
+
 #class GoogleToken (BaseModel):
 #    token: str
 
