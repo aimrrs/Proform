@@ -18,7 +18,8 @@ SECRET = os.getenv("Client_secret")
 app = FastAPI()
 
 origins = [
-    "http:// localhost:3000",
+    "http://localhost:3000",
+    "https://mind-mess-26673378.figma.site/",
 ]
 
 app.add_middleware(
@@ -29,7 +30,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/add-college-domain", status_code=status.HTTP_201_CREATED)
+# Progress.
+def createJWT (user_id: int, email: EmailStr):
+    payload = {
+        "user_id": user_id,
+        "email": email,
+        #"exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
+    }
+    proform_jwt_token = jwt.encode(payload, SECRET, algorithm="HS256")
+    return proform_jwt_token
+
+# Endpoints.
+
+@app.post("/add-college-domain", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
 def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
     domain = items.domain.lower().strip()
     domain_exists = session.exec(select(AvailableColleges).where(AvailableColleges.domains == domain)).first()
@@ -55,18 +68,8 @@ def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends
         "new_domain": domain,
     }
 
-# Progress.
-def createJWT (user_id: int, email: EmailStr):
-    payload = {
-        "user_id": user_id,
-        "email": email,
-        #"exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
-    }
-    proform_jwt_token = jwt.encode(payload, SECRET, algorithm="HS256")
-    return proform_jwt_token
-
 # Complete.
-@app.post("/signup", status_code=status.HTTP_201_CREATED)
+@app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication"])
 def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     is_user_exist_statement = select(Users.email).where(Users.email == items.email)
     is_user_exists = session.exec(is_user_exist_statement).first()
@@ -97,7 +100,7 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     }
 
 # Complete.
-@app.post("/auth/google", status_code=status.HTTP_200_OK)
+@app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication"])
 def getGoogleTokenId (data: GoogleToken, session: Session = Depends(get_session)):
     token = data.token    
     try:
