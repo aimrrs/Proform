@@ -1,0 +1,5 @@
+.env
+venv/*
+DontInclude.txt
+__pucache__/*
+.DS_Store
