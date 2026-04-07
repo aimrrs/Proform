@@ -102,7 +102,6 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
 # Complete.
 @app.post("/auth/google", status_code=status.HTTP_200_OK, tags=["Authentication"])
 def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
-    print(data)
     token = data["token"]
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request(), WEB_CLIENT_ID)
@@ -133,6 +132,7 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
             "is_new_user": False,
             "access_token": jwt_token,
             "token_type": "bearer",
+            "user_name": user.name,
         }
     else:
         return {
