@@ -71,7 +71,7 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
 # Endpoints.
 
 # Working.
-@app.post("/profile", status_code=status.HTTP_200_OK, tags=["User"])
+@app.get("/profile", status_code=status.HTTP_200_OK, tags=["User"])
 def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
     return current_user
 
