@@ -118,7 +118,7 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
                 email=items.email, 
                 course=items.course, 
                 department=items.department,
-                year=items.department,
+                year=items.year,
                 linkedin_link=str(items.linkedin_link), 
                 github_link=str(items.github_link))
 
@@ -177,7 +177,7 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
             "user_email": id_info["email"],
         }
 
-# Working.
+# Complete.
 @app.get("/get-courses-departments", status_code=status.HTTP_200_OK, tags=["Process - APIs"])
 def getCourseDepartment (session: Annotated[Session, Depends(get_session)]):
     data = session.exec(select(AvailableCourseAndDepartments)).all()
