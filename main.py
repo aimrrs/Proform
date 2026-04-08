@@ -257,7 +257,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     
     if is_project_exists:
         raise HTTPException (
-            status_code=401,
+            status_code=400,
             detail="Project Already Exists Or Unauthorized Operation."
         )
     
