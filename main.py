@@ -278,7 +278,6 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
 # Complete."
 @app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
 def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
-    print(current_user)
     user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
     if not user_projects:
         raise HTTPException (
@@ -291,7 +290,7 @@ def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], sessi
 @app.patch("/update-my-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def updateMyProject(items: UpdateMyProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.admin == current_user.id).where(Projects.id == items.id)).first()
-    project_dict = project.model_dump(exclude_unset=True)
+    project_dict = items.model_dump(exclude_unset=True)
     for key, value in project_dict.items():
         if key != "id":
             setattr(project, key, value)
