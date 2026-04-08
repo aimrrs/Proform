@@ -310,7 +310,7 @@ def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users,
 # Working.
 @app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getProjects (sessions: Annotated[Session, Depends(get_session)]):
-    projects = sessions.exec(select(Projects).where(Projects.public == True))
+    projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
     print(projects)
     return projects
 
