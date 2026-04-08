@@ -252,13 +252,13 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
 # Complete.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
-    is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id)
+    is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id).where(Projects.name == items.name)
     is_project_exists = session.exec(is_project_exists_statment).first()
     
     if is_project_exists:
         raise HTTPException (
             status_code=401,
-            detail="Project Already Exists."
+            detail="Project Already Exists Or Unauthorized Operation."
         )
     
     project = Projects(name=items.name, admin=current_user.id, description=items.description, github_link=items.github_link, website_link=items.website_link)
