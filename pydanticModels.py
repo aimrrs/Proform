@@ -25,6 +25,13 @@ class CreateProjectItems (BaseModel):
     name: str
     admin: int
     description: str | None = None
+    github_link: str
+    website_link: str | None = None
+
+class UpdateMyProjectItems (BaseModel):
+    id: str
+    name: str | None = None
+    description: str | None = None
     github_link: str | None = None
     website_link: str | None = None
 

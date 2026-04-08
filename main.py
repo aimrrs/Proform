@@ -248,7 +248,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
         "new_domain": domain,
     }
 
-# Progress.
+# Complete.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id)
@@ -274,7 +274,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     
     return project
 
-# Working."
+# Complete."
 @app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
 def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     print(current_user)
@@ -286,6 +286,26 @@ def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], sessi
         )
     return user_projects
 
+# Working.
+@app.patch("/update-my-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
+def updateMyProject(items: UpdateMyProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project = session.exec(select(Projects).where(Projects.admin == current_user.id).where(Projects.id == items.id)).first()
+    project_dict = project.model_dump(exclude_unset=True)
+    for key, value in project_dict.items():
+        if key != "id":
+            setattr(project, key, value)
+    
+    try:
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=401,
+            detail="Couldn't Update Project."
+        )
+    return project
 
 # Progress. Need Frontend.
 @app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
