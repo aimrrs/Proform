@@ -248,7 +248,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
         "new_domain": domain,
     }
 
-# Working.
+# Progress.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id)
@@ -274,7 +274,19 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     
     return project
 
-# Complete.
+# Working."
+@app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
+def getMyProjects(current_user: Annotated[Users, Depends(get_session)], session: Annotated[Session, Depends(get_session)]):
+    user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
+    if not user_projects:
+        raise HTTPException (
+            status_code=400,
+            detail="No Created Projects."
+        )
+    return user_projects
+
+
+# Progress. Need Frontend.
 @app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
     is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
@@ -285,8 +297,6 @@ def getPublicProfile (username: str, session: Annotated[Session, Depends(get_ses
         )
     user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
     return user
-
-
 
 
 # aimrrs
