@@ -276,7 +276,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     return project
 
 # Complete."
-@app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
+@app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getMyProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
     if not user_projects:
@@ -307,14 +307,14 @@ def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users,
         )
     return project
 
-# Working.
+# Complete.
 @app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getProjects (sessions: Annotated[Session, Depends(get_session)]):
     projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
     print(projects)
     return projects
 
-# Progress. Need Frontend.
+# Complete. Need Frontend.
 @app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
     is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
@@ -326,5 +326,15 @@ def getPublicProfile (username: str, session: Annotated[Session, Depends(get_ses
     user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
     return user
 
+# Working.
+@app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
+def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project_statement = select(Projects).where(Projects.id == items.project_id,
+                                               Projects.admin == items.user_id,
+                                               items.user_id == current_user.id)
+    
+    project = session.exec(project_statement).first()
+    print(project)
+    return
 
 # aimrrs

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, HttpUrl
 
-class SignUpItems (BaseModel):
+class SignUpItems(BaseModel):
     name: str
     email: EmailStr
     course: str
@@ -9,19 +9,19 @@ class SignUpItems (BaseModel):
     linkedin_link: HttpUrl | None = None
     github_link: HttpUrl | None = None
 
-class AddCollegeDomainsItems (BaseModel):
+class AddCollegeDomainsItems(BaseModel):
     domain: str
 
-class AddCourseDepartmentItems (BaseModel):
+class AddCourseDepartmentItems(BaseModel):
     course: str
     department: str
 
-class UpdateProfileItems (BaseModel):
+class UpdateProfileItems(BaseModel):
     year: int | None = None
     linkedin_link: str | None = None
     github_link: str | None = None
 
-class CreateProjectItems (BaseModel):
+class CreateProjectItems(BaseModel):
     name: str
     admin: int
     description: str | None = None
@@ -30,7 +30,7 @@ class CreateProjectItems (BaseModel):
     complete: bool
     public: bool
 
-class UpdateMyProjectItems (BaseModel):
+class UpdateMyProjectItems(BaseModel):
     id: str
     name: str | None = None
     description: str | None = None
@@ -38,6 +38,13 @@ class UpdateMyProjectItems (BaseModel):
     website_link: str | None = None
     complete: bool | None = None
     public: bool | None = None
+
+class AddTeamMemberItems(BaseModel):
+    user_id: int
+    project_id: int
+    role: str
+    role_description: str | None = None
+
 
 #class GoogleToken (BaseModel):
 #    token: str

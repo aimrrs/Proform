@@ -1,4 +1,11 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+from typing import List
+
+class ProjectTeamLink (SQLModel, table=True):
+    user_id: int = Field(foreign_key="users.id", primary_key=True, ondelete="CASCADE")
+    project_id: int = Field(foreign_key="projects.id", primary_key=True, ondelete="CASCADE")
+    role: str
+    role_description: str | None = None
 
 class Users (SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -9,6 +16,18 @@ class Users (SQLModel, table=True):
     year: int
     linkedin_link: str | None = None
     github_link: str | None = None
+    user_projects: List["Projects"] = Relationship(back_populates="team_members", link_model=ProjectTeamLink)
+
+class Projects (SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    admin: int = Field(index=True, foreign_key="users.id", ondelete="CASCADE")
+    description: str | None = None
+    github_link: str | None = None
+    website_link: str | None = None
+    complete: bool
+    public: bool
+    team_members: List["Users"] = Relationship(back_populates="user_projects", link_model=ProjectTeamLink)
 
 class AvailableColleges (SQLModel, table=True):
     domains: str = Field(index=True, unique=True, primary_key=True)
@@ -24,16 +43,6 @@ class PublicUserName (SQLModel, table=True):
     id: int = Field(primary_key=True, foreign_key="users.id", ondelete="CASCADE")
     username: str = Field(index=True, unique=True)
     email: str = Field(index=True, unique=True)
-
-class Projects (SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(index=True, unique=True)
-    admin: int = Field(index=True, foreign_key="users.id", ondelete="CASCADE")
-    description: str | None = None
-    github_link: str | None = None
-    website_link: str | None = None
-    complete: bool
-    public: bool
 
 
 # aimrrs
