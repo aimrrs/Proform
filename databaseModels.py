@@ -32,5 +32,8 @@ class Projects (SQLModel, table=True):
     description: str | None = None
     github_link: str | None = None
     website_link: str | None = None
+    complete: bool
+    public: bool
+
 
 # aimrrs

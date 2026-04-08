@@ -27,6 +27,8 @@ class CreateProjectItems (BaseModel):
     description: str | None = None
     github_link: str
     website_link: str | None = None
+    complete: bool
+    public: bool
 
 class UpdateMyProjectItems (BaseModel):
     id: str
@@ -34,6 +36,8 @@ class UpdateMyProjectItems (BaseModel):
     description: str | None = None
     github_link: str | None = None
     website_link: str | None = None
+    complete: bool | None = None
+    public: bool | None = None
 
 #class GoogleToken (BaseModel):
 #    token: str

@@ -261,7 +261,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
             detail="Project Already Exists Or Unauthorized Operation."
         )
     
-    project = Projects(name=items.name, admin=current_user.id, description=items.description, github_link=items.github_link, website_link=items.website_link)
+    project = Projects(name=items.name, admin=current_user.id, description=items.description, github_link=items.github_link, website_link=items.website_link, complete=items.complete, public=items.public)
     try:
         session.add(project)
         session.commit()
@@ -286,7 +286,7 @@ def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], sessi
         )
     return user_projects
 
-# Working.
+# Complete.
 @app.patch("/update-my-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def updateMyProject(items: UpdateMyProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.admin == current_user.id).where(Projects.id == items.id)).first()
