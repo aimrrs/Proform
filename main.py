@@ -275,7 +275,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     return project
 
 # Complete.
-@app.get("/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
+@app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
     is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
     if not is_username_exists:
