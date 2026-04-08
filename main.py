@@ -188,7 +188,8 @@ def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Ses
     if not is_admin:
         raise HTTPException (
             status_code=401,
-            details="Unauthorized User."
+            detail="Unauthorized User."
+            
         )
     
     is_course_department_exists_statement = select(AvailableCourseAndDepartments).where(AvailableCourseAndDepartments.course == items.course).where(AvailableCourseAndDepartments.departments == items.department)
@@ -210,7 +211,7 @@ def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Ses
     except Exception:
         raise HTTPException (
             status_code=500,
-            details="Couldn't Add Course and Department."
+            detail="Couldn't Add Course and Department."
         )
     return available_course_and_departments
 
@@ -221,7 +222,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
     if not is_admin:
         raise HTTPException (
             status_code=401,
-            details="Unauthorized User."
+            detail="Unauthorized User."
         )
     
     domain = items.domain.lower().strip()
@@ -257,7 +258,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
     if is_project_exists:
         raise HTTPException (
             status_code=401,
-            details="Project Already Exists."
+            detail="Project Already Exists."
         )
     
     project = Projects(name=items.name, admin=current_user.id, description=items.description, github_link=items.github_link, website_link=items.website_link)
