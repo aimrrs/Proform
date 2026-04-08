@@ -93,18 +93,6 @@ def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Dep
             detail="Couldn't Update Profile."
         )
     return current_user
- 
-# Working.
-@app.get("/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
-def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
-    is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
-    if not is_username_exists:
-        raise HTTPException (
-            status_code=401,
-            detail="Invalid Username."
-        )
-    user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
-    return user
 
 # Complete.
 @app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
@@ -129,6 +117,12 @@ def signUp (items: SignUpItems, session: Session = Depends(get_session)):
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    unique_name = user.email.split("@")[0]
+    public_user_name = PublicUserName(id = user.id, email=user.email, username=unique_name)
+    session.add(public_user_name)
+    session.commit()
+    session.refresh(public_user_name)
 
     jwt_token = createJWT(user.id, user.email)
 
@@ -187,7 +181,7 @@ def getCourseDepartment (session: Annotated[Session, Depends(get_session)]):
     data = session.exec(select(AvailableCourseAndDepartments)).all()
     return data
 
-# Working.
+# Complete.
 @app.post("/add-course-department", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
 def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Session, Depends(get_session)], current_user: Annotated[Users, Depends(getCurrentUser)]):
     is_admin = session.exec(select(Admin).where(Admin.id == current_user.id)).first()
@@ -220,9 +214,16 @@ def addCourseDepartment (items: AddCourseDepartmentItems, session: Annotated[Ses
         )
     return available_course_and_departments
 
-# Progress.
+# Complete.
 @app.post("/add-college-domain", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
-def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends(get_session)):
+def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Session = Depends(get_session)):
+    is_admin = session.exec(select(Admin).where(Admin.id == current_user.id)).first()
+    if not is_admin:
+        raise HTTPException (
+            status_code=401,
+            details="Unauthorized User."
+        )
+    
     domain = items.domain.lower().strip()
     domain_exists = session.exec(select(AvailableColleges).where(AvailableColleges.domains == domain)).first()
     if domain_exists:
@@ -246,5 +247,46 @@ def addCollegeDomains (items: AddCollegeDomainsItems, session: Session = Depends
         "message": "College Domain Added.",
         "new_domain": domain,
     }
+
+# Working.
+@app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
+def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id)
+    is_project_exists = session.exec(is_project_exists_statment).first()
+    
+    if is_project_exists:
+        raise HTTPException (
+            status_code=401,
+            details="Project Already Exists."
+        )
+    
+    project = Projects(name=items.name, admin=current_user.id, description=items.description, github_link=items.github_link, website_link=items.website_link)
+    try:
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Create Project."
+        )
+    
+    return project
+
+# Complete.
+@app.get("/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
+def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
+    is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
+    if not is_username_exists:
+        raise HTTPException (
+            status_code=401,
+            detail="Invalid Username."
+        )
+    user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
+    return user
+
+
+
 
 # aimrrs

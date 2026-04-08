@@ -25,4 +25,12 @@ class PublicUserName (SQLModel, table=True):
     username: str = Field(index=True, unique=True)
     email: str = Field(index=True, unique=True)
 
+class Projects (SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    admin: int = Field(index=True, foreign_key="users.id", ondelete="CASCADE")
+    description: str | None = None
+    github_link: str | None = None
+    website_link: str | None = None
+
 # aimrrs

@@ -21,6 +21,13 @@ class UpdateProfileItems (BaseModel):
     linkedin_link: str | None = None
     github_link: str | None = None
 
+class CreateProjectItems (BaseModel):
+    name: str
+    admin: int
+    description: str | None = None
+    github_link: str | None = None
+    website_link: str | None = None
+
 #class GoogleToken (BaseModel):
 #    token: str
 
