@@ -277,7 +277,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
 
 # Complete."
 @app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
-def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def getMyProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
     if not user_projects:
         raise HTTPException (
@@ -288,7 +288,7 @@ def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], sessi
 
 # Complete.
 @app.patch("/update-my-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
-def updateMyProject(items: UpdateMyProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.admin == current_user.id).where(Projects.id == items.id)).first()
     project_dict = items.model_dump(exclude_unset=True)
     for key, value in project_dict.items():
@@ -306,6 +306,12 @@ def updateMyProject(items: UpdateMyProjectItems, current_user: Annotated[Users, 
             detail="Couldn't Update Project."
         )
     return project
+
+# Working.
+@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+def getProjects (sessions: Annotated[Session, Depends(get_session)]):
+    projects = sessions.exec(select(Projects).where(Projects.public == True))
+    return projects
 
 # Progress. Need Frontend.
 @app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
