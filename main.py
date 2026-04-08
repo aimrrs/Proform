@@ -329,12 +329,54 @@ def getPublicProfile (username: str, session: Annotated[Session, Depends(get_ses
 # Working.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
 def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
-    project_statement = select(Projects).where(Projects.id == items.project_id,
-                                               Projects.admin == items.user_id,
-                                               items.user_id == current_user.id)
+    user = session.exec(select(Users).where(Users.id == items.user_id)).first()
+    if not user:
+        raise HTTPException (
+            status_code=404,
+            detail="User Not Found."
+        )
+
+    project = session.exec(select(Projects).where(Projects.id == items.project_id, Projects.admin == current_user.id)).first()
+    if not project:
+        raise HTTPException (
+            status_code=404,
+            detail="Project Not Found."
+        )
     
-    project = session.exec(project_statement).first()
-    print(project)
-    return
+    member = session.exec(select(ProjectTeamLink).where(ProjectTeamLink.user_id == items.user_id, ProjectTeamLink.project_id == items.project_id)).first()
+    if member:
+        raise HTTPException (
+            status_code=400,
+            detail="User Exists In Team."
+        )
+    
+    team_member = ProjectTeamLink(project_id=items.project_id, user_id=items.user_id, role=items.role, role_description=items.role_description)
+    try:
+        session.add(team_member)
+        session.commit()
+        session.refresh(team_member)
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Add Team Member."
+        )
+    return team_member
+
+# Working.
+@app.get("/projects/{project_id}", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project = session.exec(select(Projects).where(Projects.id == project_id)).first()
+    if not project:
+        raise HTTPException (
+            status_code=404,
+            detail="Project Not Found."
+        )
+    if not project.admin == current_user.id and current_user not in project.team_members:
+        raise HTTPException (
+            status_code=403,
+            detail="No Permission Access."
+        )
+    return project
 
 # aimrrs
