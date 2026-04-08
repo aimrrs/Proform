@@ -276,10 +276,9 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
 
 # Working."
 @app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Projects - APIs"])
-def getMyProjects(current_user: Annotated[Users, Depends(get_session)], session: Annotated[Session, Depends(get_session)]):
+def getMyProjects(current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     print(current_user)
     user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
-    print(current_user)
     if not user_projects:
         raise HTTPException (
             status_code=400,
