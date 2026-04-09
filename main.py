@@ -380,21 +380,22 @@ def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Dep
 
 # Working.
 @app.get("/get-team-members", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
-def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def getTeamMember (project_id: int, session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id)).first()
     if not project:
         raise HTTPException (
             status_code=404,
             detail="Project Not Found."
         )
+    """
     if current_user.id != project.admin and current_user not in project.team_members:
         raise HTTPException (
             status_code=401,
             detail="Unauthorized Access."
         )
-    
+    """
     print(project.team_members)
 
-    #return project.team_members
+    #return project.team_members current_user: Annotated[Users, Depends(getCurrentUser)]
 
 # aimrrs
