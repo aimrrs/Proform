@@ -94,6 +94,18 @@ def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Dep
         )
     return current_user
 
+# Complete. Need Frontend.
+@app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
+def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
+    is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
+    if not is_username_exists:
+        raise HTTPException (
+            status_code=401,
+            detail="Invalid Username."
+        )
+    user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
+    return user
+
 # Complete.
 @app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
 def signUp (items: SignUpItems, session: Session = Depends(get_session)):
@@ -311,22 +323,25 @@ def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users,
 @app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getProjects (sessions: Annotated[Session, Depends(get_session)]):
     projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
-    print(projects)
     return projects
 
-# Complete. Need Frontend.
-@app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
-def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
-    is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
-    if not is_username_exists:
+# Complete.
+@app.get("/projects/{project_id}", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project = session.exec(select(Projects).where(Projects.id == project_id)).first()
+    if not project:
         raise HTTPException (
-            status_code=401,
-            detail="Invalid Username."
+            status_code=404,
+            detail="Project Not Found."
         )
-    user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
-    return user
+    if not project.admin == current_user.id and current_user not in project.team_members:
+        raise HTTPException (
+            status_code=403,
+            detail="No Permission Access."
+        )
+    return project
 
-# Working.
+# Complete.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
 def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user = session.exec(select(Users).where(Users.id == items.user_id)).first()
@@ -364,19 +379,22 @@ def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Dep
     return team_member
 
 # Working.
-@app.get("/projects/{project_id}", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
-def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+@app.get("/get-team-members", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
+def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id)).first()
     if not project:
         raise HTTPException (
             status_code=404,
             detail="Project Not Found."
         )
-    if not project.admin == current_user.id and current_user not in project.team_members:
+    if current_user.id != project.admin and current_user not in project.team_members:
         raise HTTPException (
-            status_code=403,
-            detail="No Permission Access."
+            status_code=401,
+            detail="Unauthorized Access."
         )
-    return project
+    
+    print(project.team_members)
+
+    #return project.team_members
 
 # aimrrs
