@@ -68,7 +68,7 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
 
 # Working.
 def getUsernameById(user_id: int , session: Annotated[Session, Depends(get_session)]):
-    user = session.exec(select(PublicUserName).where(user_id == user_id)).first()
+    user = session.exec(select(PublicUserName).where(PublicUserName.id == user_id)).first()
     if not user:
         raise HTTPException (
             status_code=404,
@@ -166,10 +166,8 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
         )
 
     user_domain = id_info["email"].split("@")[-1]
-    print(user_domain)
     domains_statement = select(AvailableColleges).where(AvailableColleges.domains == user_domain)
     is_domain_exists = session.exec(domains_statement).first()
-    print(is_domain_exists)
     if not is_domain_exists:
         raise HTTPException(
             status_code=401,
@@ -272,7 +270,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
 
 # Working.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
-def createProject (items: CreateProjectItems, username: Annotated[str, Depends(getUsernameById)], current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id).where(Projects.name == items.name)
     is_project_exists = session.exec(is_project_exists_statment).first()
     
@@ -288,7 +286,7 @@ def createProject (items: CreateProjectItems, username: Annotated[str, Depends(g
         session.commit()
         session.refresh(project)
 
-        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin, role="Admin", username=username)
+        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin, role="Admin", username=getUsernameById(current_user.id, session=session))
         session.add(project_team_link)
         session.commit()
 
@@ -357,7 +355,7 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
 
 # Working.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
-def addTeamMember (items: AddTeamMemberItems, username: Annotated[str, Depends(getUsernameById)], current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user = session.exec(select(Users).where(Users.id == items.user_id)).first()
     if not user:
         raise HTTPException (
@@ -379,7 +377,7 @@ def addTeamMember (items: AddTeamMemberItems, username: Annotated[str, Depends(g
             detail="User Exists In Team."
         )
     
-    team_member = ProjectTeamLink(project_id=items.project_id, user_id=items.user_id, role=items.role, role_description=items.role_description, username=username)
+    team_member = ProjectTeamLink(project_id=items.project_id, user_id=items.user_id, role=items.role, role_description=items.role_description, username=getUsernameById(items.user_id, session=session))
     try:
         session.add(team_member)
         session.commit()
