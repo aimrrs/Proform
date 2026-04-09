@@ -66,7 +66,7 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
         )
     return user
 
-# Working.
+# Complete.
 def getUsernameById(user_id: int , session: Annotated[Session, Depends(get_session)]):
     user = session.exec(select(PublicUserName).where(PublicUserName.id == user_id)).first()
     if not user:
@@ -268,7 +268,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
         "new_domain": domain,
     }
 
-# Working.
+# Complete.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id).where(Projects.name == items.name)
