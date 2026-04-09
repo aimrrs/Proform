@@ -278,13 +278,18 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
         session.add(project)
         session.commit()
         session.refresh(project)
+
+        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin)
+        session.add(project_team_link)
+        session.commit()
+
     except Exception:
         session.rollback()
         raise HTTPException (
             status_code=500,
             detail="Couldn't Create Project."
         )
-    
+
     return project
 
 # Complete."
@@ -380,22 +385,25 @@ def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Dep
 
 # Working.
 @app.get("/get-team-members", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
-def getTeamMember (project_id: int, session: Annotated[Session, Depends(get_session)]):
-    project = session.exec(select(Projects).where(Projects.id == project_id)).first()
-    if not project:
+def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project_team = session.exec(select(ProjectTeamLink).where(ProjectTeamLink.project_id == project_id)).all()
+    if not project_team:
         raise HTTPException (
             status_code=404,
             detail="Project Not Found."
         )
-    """
-    if current_user.id != project.admin and current_user not in project.team_members:
+    
+    is_member = False
+    for member in project_team:
+        if member.user_id == current_user.id:
+            is_member = True
+            break
+    if not is_member:
         raise HTTPException (
             status_code=401,
             detail="Unauthorized Access."
         )
-    """
-    print(project.team_members)
 
-    #return project.team_members current_user: Annotated[Users, Depends(getCurrentUser)]
+    return project_team
 
 # aimrrs

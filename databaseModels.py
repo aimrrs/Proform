@@ -6,6 +6,7 @@ class ProjectTeamLink (SQLModel, table=True):
     project_id: int = Field(foreign_key="projects.id", primary_key=True, ondelete="CASCADE")
     role: str
     role_description: str | None = None
+    username: str
 
 class Users (SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
