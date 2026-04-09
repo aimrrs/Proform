@@ -66,6 +66,15 @@ def getCurrentUser (token: Annotated[str, Depends(oauth2_scheme)], session: Anno
         )
     return user
 
+# Working.
+def getUsernameById(user_id: int , session: Annotated[Session, Depends(get_session)]):
+    user = session.exec(select(PublicUserName).where(user_id == user_id)).first()
+    if not user:
+        raise HTTPException (
+            status_code=404,
+            detail="User Not Found."
+        )
+    return user.username
 
 # Endpoints.
 
@@ -160,7 +169,7 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
 
     domains_statement = select(AvailableColleges).where(AvailableColleges.domains == user_domain)
     is_domain_exists = session.exec(domains_statement).first()
-
+    print(is_domain_exists)
     if not is_domain_exists:
         raise HTTPException(
             status_code=401,
@@ -261,7 +270,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
         "new_domain": domain,
     }
 
-# Complete.
+# Working.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
 def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id).where(Projects.name == items.name)
@@ -279,7 +288,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
         session.commit()
         session.refresh(project)
 
-        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin)
+        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin, role="Admin", username=getUsername())
         session.add(project_team_link)
         session.commit()
 
