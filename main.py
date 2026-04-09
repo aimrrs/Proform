@@ -166,7 +166,7 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
         )
 
     user_domain = id_info["email"].split("@")[-1]
-
+    print(user_domain)
     domains_statement = select(AvailableColleges).where(AvailableColleges.domains == user_domain)
     is_domain_exists = session.exec(domains_statement).first()
     print(is_domain_exists)
