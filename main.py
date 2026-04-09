@@ -272,7 +272,7 @@ def addCollegeDomains (items: AddCollegeDomainsItems, current_user: Annotated[Us
 
 # Working.
 @app.post("/create-project", status_code=status.HTTP_201_CREATED, tags=["Project - APIs"])
-def createProject (items: CreateProjectItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def createProject (items: CreateProjectItems, username: Annotated[str, Depends(getUsernameById)], current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     is_project_exists_statment = select(Projects).where(Projects.admin == current_user.id).where(Projects.name == items.name)
     is_project_exists = session.exec(is_project_exists_statment).first()
     
@@ -288,7 +288,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
         session.commit()
         session.refresh(project)
 
-        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin, role="Admin", username=getUsername())
+        project_team_link = ProjectTeamLink(project_id=project.id, user_id=project.admin, role="Admin", username=username)
         session.add(project_team_link)
         session.commit()
 
@@ -355,9 +355,9 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
         )
     return project
 
-# Complete.
+# Working.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
-def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+def addTeamMember (items: AddTeamMemberItems, username: Annotated[str, Depends(getUsernameById)], current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user = session.exec(select(Users).where(Users.id == items.user_id)).first()
     if not user:
         raise HTTPException (
@@ -379,7 +379,7 @@ def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Dep
             detail="User Exists In Team."
         )
     
-    team_member = ProjectTeamLink(project_id=items.project_id, user_id=items.user_id, role=items.role, role_description=items.role_description)
+    team_member = ProjectTeamLink(project_id=items.project_id, user_id=items.user_id, role=items.role, role_description=items.role_description, username=username)
     try:
         session.add(team_member)
         session.commit()
