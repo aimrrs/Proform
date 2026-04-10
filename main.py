@@ -659,5 +659,70 @@ def getProjectRoles(project_id: int, session: Annotated[Session, Depends(get_ses
     # 2. Return the roles (SQLModel relationships make this easy!)
     return project.open_roles
 
+@app.get("/projects/{project_id}/applications", status_code=status.HTTP_200_OK, tags=["Application - APIs"])
+def getProjectApplications(
+    project_id: int,
+    current_user: Annotated[Users, Depends(getCurrentUser)],
+    session: Annotated[Session, Depends(get_session)]
+):
+    # 1. Verify project exists and the current user is the Admin
+    project = session.exec(select(Projects).where(Projects.id == project_id)).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    if project.admin != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the project admin can view applications.")
+
+    # 2. Join the Tables to get the exact JSON structure the frontend expects
+    statement = (
+        select(Applications, ProjectRoles, Users)
+        .join(ProjectRoles, Applications.role_id == ProjectRoles.id)
+        .join(Users, Applications.user_id == Users.id)
+        .where(Applications.project_id == project_id)
+    )
+    
+    results = session.exec(statement).all()
+
+    # 3. Format the response
+    response_data = []
+    for app, role, user in results:
+        response_data.append({
+            "application_id": app.id,
+            "role_title": role.title,
+            "applicant_name": user.name,
+            "applicant_email": user.email,
+            "message": app.message,
+            "status": app.status
+        })
+        
+    return response_data
+
+@app.get("/my-applications", status_code=status.HTTP_200_OK, tags=["Application - APIs"])
+def getMyApplications(
+    current_user: Annotated[Users, Depends(getCurrentUser)],
+    session: Annotated[Session, Depends(get_session)]
+):
+    # Join the Tables to get the Project Name and Role Title
+    statement = (
+        select(Applications, Projects, ProjectRoles)
+        .join(Projects, Applications.project_id == Projects.id)
+        .join(ProjectRoles, Applications.role_id == ProjectRoles.id)
+        .where(Applications.user_id == current_user.id)
+    )
+    
+    results = session.exec(statement).all()
+
+    # Format the response
+    response_data = []
+    for app, proj, role in results:
+        response_data.append({
+            "application_id": app.id,
+            "project_name": proj.name,
+            "role_title": role.title,
+            "message": app.message,
+            "status": app.status
+        })
+        
+    return response_data
+
 
 # aimrrs
