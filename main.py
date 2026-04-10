@@ -79,6 +79,18 @@ def getUsernameById(user_id: int , session: Annotated[Session, Depends(get_sessi
 # Endpoints.
 
 # Complete.
+@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Discover - APIs"])
+def getProjects (sessions: Annotated[Session, Depends(get_session)]):
+    projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
+    return projects
+
+# Complete.
+@app.get("/get-courses-departments", status_code=status.HTTP_200_OK, tags=["Process - APIs"])
+def getCourseDepartment (session: Annotated[Session, Depends(get_session)]):
+    data = session.exec(select(AvailableCourseAndDepartments)).all()
+    return data
+
+# Complete.
 @app.get("/profile", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def userProfile (current_user: Annotated[Users, Depends(getCurrentUser)]):
     return current_user
@@ -114,6 +126,20 @@ def getPublicProfile (username: str, session: Annotated[Session, Depends(get_ses
         )
     user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
     return user
+
+# Working.
+@app.delete("/delete-user", status_code=status.HTTP_200_OK , tags=["User - APIs"])
+def removeUser (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    try:
+        session.delete(current_user)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Delete User."
+        )
+    return {"message": "User Deleted Successfully."}
 
 # Complete.
 @app.post("/signup", status_code=status.HTTP_201_CREATED, tags=["Authentication - APIs"])
@@ -193,12 +219,6 @@ def getGoogleTokenId (data: dict, session: Session = Depends(get_session)):
             "user_name": id_info["given_name"],
             "user_email": id_info["email"],
         }
-
-# Complete.
-@app.get("/get-courses-departments", status_code=status.HTTP_200_OK, tags=["Process - APIs"])
-def getCourseDepartment (session: Annotated[Session, Depends(get_session)]):
-    data = session.exec(select(AvailableCourseAndDepartments)).all()
-    return data
 
 # Complete.
 @app.post("/add-course-department", status_code=status.HTTP_201_CREATED, tags=["Admin - APIs"])
@@ -299,7 +319,7 @@ def createProject (items: CreateProjectItems, current_user: Annotated[Users, Dep
 
     return project
 
-# Complete."
+# Complete.
 @app.get("/my-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getMyProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user_projects = session.exec(select(Projects).where(Projects.admin == current_user.id)).all()
@@ -332,12 +352,6 @@ def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users,
     return project
 
 # Complete.
-@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Discover - APIs"])
-def getProjects (sessions: Annotated[Session, Depends(get_session)]):
-    projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
-    return projects
-
-# Working.
 @app.get("/projects/{project_id}", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id)).first()
@@ -358,7 +372,7 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
     
     return (project, info)
 
-# Working.
+# Complete.
 @app.get("/collab-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getCollabProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     statement = (
@@ -378,6 +392,27 @@ def getCollabProjects (current_user: Annotated[Users, Depends(getCurrentUser)], 
     return collab_projects
 
 # Working.
+@app.delete("/delete-project", status_code=status.HTTP_200_OK, tags=["project - APIs"])
+def deleteProject (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project = session.exec(select(Projects).where(Projects.id == project_id, Projects.admin == current_user.id)).first()
+    if not project:
+        raise HTTPException (
+            status_code=400,
+            detail="Projet Not Found Or Unauthorized Operation."
+        )
+    try:
+        session.delete(project)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Delete Project."
+        )
+
+    return {"message": "Project Deleted Successfully."}
+
+# Complete.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
 def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     user = session.exec(select(Users).where(Users.id == items.user_id)).first()
@@ -414,7 +449,7 @@ def addTeamMember (items: AddTeamMemberItems, current_user: Annotated[Users, Dep
         )
     return team_member
 
-# Working.
+# Complete.
 @app.get("/get-team-members", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
 def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project_team = session.exec(select(ProjectTeamLink).where(ProjectTeamLink.project_id == project_id)).all()
@@ -437,5 +472,31 @@ def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCu
 
     return project_team
 
+# Working,
+@app.delete("/delete-team-member", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
+def deleteTeamMember (user_id: int, project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    project = session.exec(select(Projects).where(Projects.id == project_id, Projects.admin == current_user.id)).first()
+    if not project:
+        raise HTTPException (
+            status_code=404,
+            detail="Project Not Found Or Unauthorized."
+        )
+    team_member = session.exec(select(ProjectTeamLink).where(ProjectTeamLink.user_id == user_id, ProjectTeamLink.project_id == project_id)).first()
+    if not team_member:
+        raise HTTPException (
+            status_code=404,
+            detail="Team Member Not Found."
+        )
+    try:
+        session.delete(team_member)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise HTTPException (
+            status_code=500,
+            detail="Couldn't Delete Team Member."
+        )
+
+    return {"message": "Team Member Deleted Successfully."}
 
 # aimrrs
