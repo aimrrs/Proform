@@ -127,7 +127,7 @@ def getPublicProfile (username: str, session: Annotated[Session, Depends(get_ses
     user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
     return user
 
-# Working.
+# Complete.
 @app.delete("/delete-user", status_code=status.HTTP_200_OK , tags=["User - APIs"])
 def removeUser (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     try:
@@ -391,7 +391,7 @@ def getCollabProjects (current_user: Annotated[Users, Depends(getCurrentUser)], 
 
     return collab_projects
 
-# Working.
+# Complete.
 @app.delete("/delete-project", status_code=status.HTTP_200_OK, tags=["project - APIs"])
 def deleteProject (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id, Projects.admin == current_user.id)).first()
@@ -472,7 +472,7 @@ def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCu
 
     return project_team
 
-# Working,
+# Complete.
 @app.delete("/delete-team-member", status_code=status.HTTP_200_OK, tags=["Team - APIs"])
 def deleteTeamMember (user_id: int, project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id, Projects.admin == current_user.id)).first()
