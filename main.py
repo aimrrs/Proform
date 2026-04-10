@@ -79,10 +79,31 @@ def getUsernameById(user_id: int , session: Annotated[Session, Depends(get_sessi
 # Endpoints.
 
 # Complete.
-@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Discover - APIs"])
-def getProjects (sessions: Annotated[Session, Depends(get_session)]):
-    projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
-    return projects
+@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+def getAllPublicProjects(session: Annotated[Session, Depends(get_session)]):
+    # Fetch all public projects
+    projects = session.exec(select(Projects).where(Projects.public == True)).all()
+    
+    if not projects:
+        raise HTTPException(status_code=404, detail="No projects found.")
+
+    # Construct a custom dictionary to ensure the frontend gets the roles!
+    response_data = []
+    for project in projects:
+        response_data.append({
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "github_link": project.github_link,
+            "website_link": project.website_link,
+            "admin": project.admin,
+            "complete": project.complete,
+            "public": project.public,
+            # THE MAGIC: We grab the relationship list we built earlier!
+            "open_roles": project.open_roles 
+        })
+        
+    return response_data
 
 # Complete.
 @app.get("/get-courses-departments", status_code=status.HTTP_200_OK, tags=["Process - APIs"])
@@ -626,6 +647,17 @@ def updateApplicationStatus(
         raise HTTPException(status_code=500, detail="Database error while processing application.")
 
     return {"message": f"Application successfully marked as {new_status}.", "application": application}
+
+@app.get("/projects/{project_id}/roles", status_code=status.HTTP_200_OK, tags=["Application - APIs"])
+def getProjectRoles(project_id: int, session: Annotated[Session, Depends(get_session)]):
+    # 1. Verify the project exists
+    project = session.exec(select(Projects).where(Projects.id == project_id)).first()
+    
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+        
+    # 2. Return the roles (SQLModel relationships make this easy!)
+    return project.open_roles
 
 
 # aimrrs
