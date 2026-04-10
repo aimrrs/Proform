@@ -28,6 +28,7 @@ class Projects (SQLModel, table=True):
     website_link: str | None = None
     complete: bool
     public: bool
+    open_roles: List["ProjectRoles"] = Relationship()
     team_members: List["Users"] = Relationship(back_populates="user_projects", link_model=ProjectTeamLink)
 
 class AvailableColleges (SQLModel, table=True):
@@ -44,6 +45,22 @@ class PublicUserName (SQLModel, table=True):
     id: int = Field(primary_key=True, foreign_key="users.id", ondelete="CASCADE")
     username: str = Field(index=True, unique=True)
     email: str = Field(index=True, unique=True)
+
+class ProjectRoles(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="projects.id", ondelete="CASCADE")
+    title: str
+    description: str
+    is_filled: bool = Field(default=False)
+
+class Applications(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    # Linking to the project makes fetching all applications for an admin much faster
+    project_id: int = Field(foreign_key="projects.id", ondelete="CASCADE") 
+    role_id: int = Field(foreign_key="projectroles.id", ondelete="CASCADE")
+    user_id: int = Field(foreign_key="users.id", ondelete="CASCADE")
+    message: str
+    status: str = Field(default="pending")
 
 
 # aimrrs

@@ -45,6 +45,16 @@ class AddTeamMemberItems(BaseModel):
     role: str
     role_description: str | None = None
 
+class CreateRoleItems(BaseModel):
+    title: str
+    description: str
+
+class ApplyRoleItems(BaseModel):
+    message: str
+
+class ApplicationStatusItems(BaseModel):
+    status: str
+
 
 #class GoogleToken (BaseModel):
 #    token: str

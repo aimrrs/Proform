@@ -115,17 +115,22 @@ def updateProfile (items: UpdateProfileItems, current_user: Annotated[Users, Dep
         )
     return current_user
 
-# Complete. Need Frontend.
+# Working.
 @app.get("/profile/{username}", status_code=status.HTTP_200_OK, tags=["User - APIs"])
 def getPublicProfile (username: str, session: Annotated[Session, Depends(get_session)]):
     is_username_exists = session.exec(select(PublicUserName).where(PublicUserName.username == username)).first()
     if not is_username_exists:
         raise HTTPException (
-            status_code=401,
-            detail="Invalid Username."
+            status_code=404,
+            detail="User Not Found."
         )
     user = session.exec(select(Users).where(Users.email == is_username_exists.email)).first()
-    return user
+    projects = []
+    for project in user.user_projects:
+        if project.public:
+            projects.append(project)
+
+    return (user, projects)
 
 # Complete.
 @app.delete("/delete-user", status_code=status.HTTP_200_OK , tags=["User - APIs"])
@@ -498,5 +503,129 @@ def deleteTeamMember (user_id: int, project_id: int, current_user: Annotated[Use
         )
 
     return {"message": "Team Member Deleted Successfully."}
+
+
+# AI
+@app.post("/projects/{project_id}/roles", status_code=status.HTTP_201_CREATED, tags=["Application - APIs"])
+def createProjectRole(
+    project_id: int, 
+    items: CreateRoleItems, 
+    current_user: Annotated[Users, Depends(getCurrentUser)], 
+    session: Annotated[Session, Depends(get_session)]
+):
+    # 1. Verify project exists and user is admin
+    project = session.exec(select(Projects).where(Projects.id == project_id, Projects.admin == current_user.id)).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found or unauthorized.")
+
+    # 2. Create the open role
+    new_role = ProjectRoles(
+        project_id=project.id,
+        title=items.title,
+        description=items.description
+    )
+    
+    try:
+        session.add(new_role)
+        session.commit()
+        session.refresh(new_role)
+    except Exception:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Couldn't create role.")
+        
+    return new_role
+
+@app.post("/roles/{role_id}/apply", status_code=status.HTTP_201_CREATED, tags=["Application - APIs"])
+def applyForRole(
+    role_id: int, 
+    items: ApplyRoleItems, 
+    current_user: Annotated[Users, Depends(getCurrentUser)], 
+    session: Annotated[Session, Depends(get_session)]
+):
+    # 1. Verify the role exists and is not filled
+    role = session.exec(select(ProjectRoles).where(ProjectRoles.id == role_id)).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found.")
+    if role.is_filled:
+        raise HTTPException(status_code=400, detail="This role has already been filled.")
+
+    # 2. Check if user already applied to this specific role to prevent spam
+    existing_app = session.exec(
+        select(Applications).where(Applications.role_id == role_id, Applications.user_id == current_user.id)
+    ).first()
+    
+    if existing_app:
+        raise HTTPException(status_code=400, detail="You have already applied for this role.")
+
+    # 3. Create the application
+    application = Applications(
+        project_id=role.project_id,
+        role_id=role.id,
+        user_id=current_user.id,
+        message=items.message
+    )
+    
+    try:
+        session.add(application)
+        session.commit()
+        session.refresh(application)
+    except Exception:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Couldn't submit application.")
+        
+    return {"message": "Application submitted successfully!"}
+
+@app.patch("/applications/{application_id}/status", status_code=status.HTTP_200_OK, tags=["Application - APIs"])
+def updateApplicationStatus(
+    application_id: int, 
+    items: ApplicationStatusItems, 
+    current_user: Annotated[Users, Depends(getCurrentUser)], 
+    session: Annotated[Session, Depends(get_session)]
+):
+    # 1. Fetch the application
+    application = session.exec(select(Applications).where(Applications.id == application_id)).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found.")
+
+    # 2. Verify the current_user is the Admin of the project this application belongs to
+    project = session.exec(select(Projects).where(Projects.id == application.project_id)).first()
+    if not project or project.admin != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized. Only the project admin can do this.")
+
+    # 3. Update the application status
+    new_status = items.status.lower()
+    if new_status not in ["accepted", "rejected"]:
+        raise HTTPException(status_code=400, detail="Status must be 'accepted' or 'rejected'.")
+        
+    application.status = new_status
+    session.add(application)
+
+    # 4. THE MAGIC: If accepted, do the extra database work
+    if new_status == "accepted":
+        # A. Mark the role as filled
+        role = session.exec(select(ProjectRoles).where(ProjectRoles.id == application.role_id)).first()
+        if role:
+            role.is_filled = True
+            session.add(role)
+            
+        # B. Add them to the actual ProjectTeamLink table!
+        team_link = ProjectTeamLink(
+            project_id=project.id,
+            user_id=application.user_id,
+            role=role.title if role else "Member",
+            role_description="Added via application."
+        )
+        session.add(team_link)
+
+    # 5. Save everything at once
+    try:
+        session.commit()
+        session.refresh(application)
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Database error while processing application.")
+
+    return {"message": f"Application successfully marked as {new_status}.", "application": application}
+
 
 # aimrrs
