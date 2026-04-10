@@ -352,9 +352,9 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
             detail="No Permission Access."
         )
     if project.admin == current_user.id:
-        info = {"edit: True"}
+        info = {"admin": True}
     else:
-        info = {"edit: False"}
+        info = {"admin": False}
     
     return (project, info)
 
