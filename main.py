@@ -644,7 +644,11 @@ def updateApplicationStatus(
         session.refresh(application)
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail="Database error while processing application.")
+        # 1. Print the EXACT error to your Railway/Terminal logs
+        print(f"🔥 MASSIVE DATABASE CRASH: {e}") 
+        
+        # 2. Send the exact error to the frontend so you can read it in the red box!
+        raise HTTPException(status_code=500, detail=f"DB Error: {str(e)}")
 
     return {"message": f"Application successfully marked as {new_status}.", "application": application}
 
