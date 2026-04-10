@@ -629,12 +629,16 @@ def updateApplicationStatus(
             role.is_filled = True
             session.add(role)
             
-        # B. Add them to the actual ProjectTeamLink table!
+        # B. Grab the applicant's username using your helper function!
+        applicant_username = getUsernameById(user_id=application.user_id, session=session)
+            
+        # C. Add them to the actual ProjectTeamLink table!
         team_link = ProjectTeamLink(
             project_id=project.id,
             user_id=application.user_id,
             role=role.title if role else "Member",
-            role_description="Added via application."
+            role_description="Added via application.",
+            username=applicant_username # <-- THE FIX: Pass the username to the database!
         )
         session.add(team_link)
 
