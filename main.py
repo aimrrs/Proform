@@ -337,7 +337,7 @@ def getProjects (sessions: Annotated[Session, Depends(get_session)]):
     projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
     return projects
 
-# Complete.
+# Working.
 @app.get("/projects/{project_id}", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     project = session.exec(select(Projects).where(Projects.id == project_id)).first()
@@ -351,9 +351,14 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
             status_code=403,
             detail="No Permission Access."
         )
-    return project
+    if project.admin == current_user.id:
+        info = {"edit: True"}
+    else:
+        info = {"edit: False"}
+    
+    return (project, info)
 
-# Working.
+# Complete.
 @app.get("/collab-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
 def getCollabProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
     projects = current_user.user_projects
