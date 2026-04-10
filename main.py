@@ -332,7 +332,7 @@ def updateMyProject (items: UpdateMyProjectItems, current_user: Annotated[Users,
     return project
 
 # Complete.
-@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+@app.get("/get-projects", status_code=status.HTTP_200_OK, tags=["Discover - APIs"])
 def getProjects (sessions: Annotated[Session, Depends(get_session)]):
     projects = sessions.exec(select(Projects).where(Projects.public == True)).all()
     return projects
@@ -352,6 +352,17 @@ def getProjectById (project_id: int, current_user: Annotated[Users, Depends(getC
             detail="No Permission Access."
         )
     return project
+
+# Working.
+@app.get("/collab-projects", status_code=status.HTTP_200_OK, tags=["Project - APIs"])
+def getCollabProjects (current_user: Annotated[Users, Depends(getCurrentUser)], session: Annotated[Session, Depends(get_session)]):
+    projects = current_user.user_projects
+    if not projects:
+        raise HTTPException (
+            status_code=404,
+            detail="No Project Found."
+        )
+    return projects
 
 # Working.
 @app.post("/add-team-member", status_code=status.HTTP_201_CREATED, tags=["Team - APIs"])
@@ -412,5 +423,6 @@ def getTeamMember (project_id: int, current_user: Annotated[Users, Depends(getCu
         )
 
     return project_team
+
 
 # aimrrs
